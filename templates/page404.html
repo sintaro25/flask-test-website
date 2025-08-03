@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block title %}
+<title>Страница не найдена</title>
+{% endblock %}
+
+{% block content %}
+<h1 style="text-align: center; margin-top: 70px;">Страница не найдена</h1>
+<div style="text-align: center";>Страница не найдена, вернуться на <a href="{{ url_for('index') }}">главную страницу</a>.</div>
+{% endblock %}
