@@ -3,3 +3,9 @@ CREATE TABLE IF NOT EXISTS mainmenu (
     title TEXT NOT NULL,
     url TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
+    url TEXT NOT NULL
+);
