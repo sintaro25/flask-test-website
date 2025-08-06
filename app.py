@@ -26,7 +26,7 @@ def create_db():
 
 def get_db():
     if not hasattr(g, 'link_db'):
-        g.link_db = connect_db
+        g.link_db = connect_db()
     return g.link_db
 
 menu = [
