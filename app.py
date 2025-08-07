@@ -1,17 +1,19 @@
 from flask import Flask, render_template, url_for, request, flash, session, redirect, abort, g
 import sqlite3
 import os
-from FDataBase import FDataBase
+from db_class import FDataBase
 
 
 DATABASE = '/tmp/flsite.db'
 DEBUG = True
 SECRET_KEY = 'sdfsdfsdfsdfsd'
+UPLOAD_FOLDER = 'static/images/'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
 
 app.config.update(dict(DATABASE=os.path.join(app.root_path, 'flsite.db')))
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def connect_db():
     conn = sqlite3.connect(app.config['DATABASE'])
@@ -54,7 +56,7 @@ def portfolio():
     dbase = FDataBase(db)
     
     if request.method == 'POST':
-        res = dbase.addImage(request.form['image'])
+        res = dbase.addImage(app, request.files['image'])
         if not res:
             flash('Ошибка добавления изображения', category = 'error')
         else:

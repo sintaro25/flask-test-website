@@ -5,6 +5,9 @@
 {% endblock %}
 
 {% block content %}
+{% for cat, msg in get_flashed_messages(True) %}
+<div class="flash {{cat}}">{{msg}}</div>
+{% endfor %}
 <ul>
 {% for image in images %}
 <li><img src="{{ url_for('static', filename=image['url']) }}" alt=""></li>
