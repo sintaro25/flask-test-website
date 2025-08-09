@@ -1,5 +1,7 @@
 import os
 import sqlite3
+import time
+import math
 
 
 class FDataBase:
@@ -39,5 +41,20 @@ class FDataBase:
             self.__db.commit()
         except sqlite3.Error as e:
             print('Ошибка записи изображения в БД', str(e))
+            return False
+        return True
+    
+    def addUser(self, name, email, hpsw):
+        try:
+            self.__cur.execute(f"SELECT COUNT() AS count FROM users WHERE email LIKE '{email}'")
+            res = self.__cur.fetchone()
+            if res['count'] > 0:
+                print('Пользователь с таким email уже существует')
+                return False
+            
+            self.__cur.execute(f"INSERT INTO users VALUES (NULL, '{name}', '{email}', '{hpsw}', {math.floor(time.time())})")
+            self.__db.commit()
+        except sqlite3.Error as e:
+            print('Ошибка добавления пользователя в БД', str(e))
             return False
         return True

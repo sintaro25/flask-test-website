@@ -2,6 +2,8 @@ from flask import Flask, render_template, url_for, request, flash, session, redi
 import sqlite3
 import os
 from db_class import FDataBase
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager
 
 
 DATABASE = '/tmp/flsite.db'
@@ -11,9 +13,10 @@ UPLOAD_FOLDER = 'static/images/'
 
 app = Flask(__name__)
 app.config.from_object(__name__)
-
 app.config.update(dict(DATABASE=os.path.join(app.root_path, 'flsite.db')))
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+login_manager = LoginManager(app)
 
 def connect_db():
     conn = sqlite3.connect(app.config['DATABASE'])
@@ -32,6 +35,13 @@ def get_db():
         g.link_db = connect_db()
     return g.link_db
 
+dbase = None
+
+@app.before_request
+def before_request():
+    global dbase 
+    db = get_db()
+    dbase = FDataBase(db)
 
 @app.teardown_appcontext
 def close_db(error):
@@ -40,21 +50,14 @@ def close_db(error):
 
 @app.route('/')
 def index():
-    db = get_db()
-    dbase = FDataBase(db)
     return render_template('index.html', menu = dbase.getMenu())
 
 @app.route('/about')
 def about():
-    db = get_db()
-    dbase = FDataBase(db)
     return render_template('about_us.html', menu=dbase.getMenu(), title='О нас')
 
 @app.route('/portfolio', methods=['POST', 'GET'])
 def portfolio():
-    db = get_db()
-    dbase = FDataBase(db)
-    
     if request.method == 'POST':
         res = dbase.addImage(app, request.files['image'])
         if not res:
@@ -64,14 +67,8 @@ def portfolio():
     
     return render_template('portfolio.html', menu=dbase.getMenu(), images=dbase.getImages())
 
-@app.route('/contacts')
-def contacts():
-    return 'Contacts'
-
 @app.route('/feedback', methods=['POST', 'GET'])
 def feedback():
-    db = get_db()
-    dbase = FDataBase(db)
     if request.method == 'POST':
         if len(request.form['username']) > 2:
             flash('Отзыв отправлен', category='success')
@@ -81,23 +78,36 @@ def feedback():
 
 @app.errorhandler(404)
 def pageNotFound(error):
-    db = get_db()
-    dbase = FDataBase(db)
     return render_template('page404.html', menu=dbase.getMenu()), 404
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    db = get_db()
-    dbase = FDataBase(db)
     if 'userLogged' in session:
         return redirect(url_for('profile', username=session['userLogged']))
     elif request.method == 'POST':
-        if request.form['username'] == 'admin' and request.form['password'] == 'admin':
-            session['userLogged'] = request.form['username']
+        if request.form['email'] == 'admin' and request.form['psw'] == 'admin':
+            session['userLogged'] = request.form['email']
             return redirect(url_for('profile', username=session['userLogged']))
         else:
             flash('Неверный логин или пароль', category='error') 
     return render_template('login.html', menu=dbase.getMenu())
+
+@app.route('/register', methods=['POST', 'GET'])
+def register():
+    if request.method == 'POST':
+        if len(request.form['name']) > 4 and len(request.form['email']) > 4 and \
+        len(request.form['psw']) > 4 and request.form['psw'] == request.form['psw2']:
+            hash = generate_password_hash(request.form['psw'])
+            res = dbase.addUser(request.form['name'], request.form['email'], hash)
+            if res:
+                flash('Вы успешно зарегистрированы', category='success')
+                return redirect(url_for('login'))
+            else:
+                flash('Ошибка регистрации, попробуйте еще раз', category='error')
+        else:
+            flash('Неверно заполнены поля', category='error')
+
+    return render_template('register.html', menu=dbase.getMenu())
 
 @app.route('/profile/<username>')
 def profile(username):
